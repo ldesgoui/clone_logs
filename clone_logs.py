@@ -195,7 +195,6 @@ create table player
     , deaths_as_spy                 integer
     , damage_as_spy                 integer
 
-
     -- TARGET STATS
     , scout_kills                   integer
     , scout_assists                 integer
@@ -329,6 +328,48 @@ def import_databases(db, imports):
             log.error(f"cannot import, invalid schema in {path!r}")
         finally:
             cursor.execute("detach database other")
+
+
+def search(limit, skip, players, uploader, title, map):
+    if limit is None:
+        return []
+
+    page = 500
+    base_params = {}
+
+    if players:
+        base_params["player"] = players.join(",")
+
+    if uploader is not None:
+        base_params["uploader"] = uploader
+
+    if title is not None:
+        base_params["title"] = title
+
+    if map is not None:
+        base_params["map"] = map
+
+    while limit > 0:
+        params = urllib.parse.urlencode(
+            dict(limit=min(page, limit), offset=skip, **base_params)
+        )
+
+        with urllib.request.urlopen(f"https://logs.tf/api/v1/log?{params}") as resp:
+            data = json.load(resp)
+
+            age_check = datetime.utcnow() - timedelta(minutes=30)
+            for item in data["logs"]:
+                then = datetime.utcfromtimestamp(item["date"])
+                if age_check < then:
+                    log.info(f"skipping log {item['id']} because it is too young")
+                    continue
+
+                yield item["id"]
+
+        limit -= page
+        skip += page
+
+    return []
 
 
 def fetch_logs(db, logs):
@@ -651,48 +692,6 @@ def dict_path(root):
         return None
 
     return dict_path
-
-
-def search(limit, skip, players, uploader, title, map):
-    if limit is None:
-        return []
-
-    page = 500
-    base_params = {}
-
-    if players:
-        base_params["player"] = players.join(",")
-
-    if uploader is not None:
-        base_params["uploader"] = uploader
-
-    if title is not None:
-        base_params["title"] = title
-
-    if map is not None:
-        base_params["map"] = map
-
-    while limit > 0:
-        params = urllib.parse.urlencode(
-            dict(limit=min(page, limit), offset=skip, **base_params)
-        )
-
-        with urllib.request.urlopen(f"https://logs.tf/api/v1/log?{params}") as resp:
-            data = json.load(resp)
-
-            age_check = datetime.utcnow() - timedelta(minutes=30)
-            for item in data["logs"]:
-                then = datetime.utcfromtimestamp(item["date"])
-                if age_check < then:
-                    log.info(f"skipping log {item['id']} because it is too young")
-                    continue
-
-                yield item["id"]
-
-        limit -= page
-        skip += page
-
-    return []
 
 
 if __name__ == "__main__":
