@@ -87,7 +87,7 @@ def insert(cursor, log_id, data):
         f"insert into log values ( { ','.join('?' * 40) } )",
         (
             log_id,
-            datetime.utcfromtimestamp(d("info.date")),
+            datetime.utcfromtimestamp(d("info.date")) if d("info.date") else None,
             d("info.title"),
             d("info.map"),
             d("info.total_length"),
@@ -135,7 +135,7 @@ def insert(cursor, log_id, data):
         f"insert into killstreak values ( { ','.join('?' * 4) } )",
         (
             (log_id, as_steamid64(s("steamid")), s("streak"), s("time"))
-            for s in map(dict_path, d("killstreaks"))
+            for s in map(dict_path, d("killstreaks") or [])
         ),
     )
 
@@ -153,7 +153,7 @@ def insert(cursor, log_id, data):
             (
                 log_id,
                 idx,
-                datetime.utcfromtimestamp(r("start_time")),
+                datetime.utcfromtimestamp(r("start_time")) if r("start_time") else None,
                 r("length"),
                 r("firstcap"),
                 r("winner"),
@@ -166,7 +166,7 @@ def insert(cursor, log_id, data):
                 r("team.Blue.dmg"),
                 r("team.Blue.ubers"),
             )
-            for idx, r in enumerate(map(dict_path, d("rounds")))
+            for idx, r in enumerate(map(dict_path, d("rounds") or []))
         ),
     )
 
@@ -184,7 +184,7 @@ def insert(cursor, log_id, data):
                 as_steamid64(e("steamid")),
                 as_steamid64(e("killer")),
             )
-            for idx, r in enumerate(d("rounds"))
+            for idx, r in enumerate(d("rounds") or [])
             for e in map(dict_path, r["events"])
         ),
     )
@@ -193,7 +193,7 @@ def insert(cursor, log_id, data):
         f"insert into round_player values ( { ','.join('?' * 5) } )",
         (
             (log_id, idx, as_steamid64(id), p("kills"), p("dmg"))
-            for idx, r in enumerate(d("rounds"))
+            for idx, r in enumerate(d("rounds") or [])
             for id, p in ((id, dict_path(p)) for id, p in r["players"].items())
         ),
     )
@@ -342,7 +342,7 @@ def insert(cursor, log_id, data):
             for id, p in players
             for cls, c in p("class_stats").items()
             for weapon, w in (
-                (weapon, dict_path(w)) for weapon, w in c["weapon"].items()
+                (weapon, dict_path(w)) for weapon, w in c.get("weapon", {}).items()
             )
         ),
     )
@@ -682,10 +682,15 @@ create table heal_spread
 """
 
 IMPORT = """
-insert or ignore into main.log          select * from other.log;
-insert or ignore into main.killstreak   select * from other.killstreak;
-insert or ignore into main.player       select * from other.player;
-insert or ignore into main.chat         select * from other.chat;
+insert or ignore into main.log              select * from other.log;
+insert or ignore into main.killstreak       select * from other.killstreak;
+insert or ignore into main.chat             select * from other.chat;
+insert or ignore into main.round            select * from other.round;
+insert or ignore into main.round_event      select * from other.round_event;
+insert or ignore into main.round_player     select * from other.round_player;
+insert or ignore into main.player           select * from other.player;
+insert or ignore into main.player_weapon    select * from other.player_weapon;
+insert or ignore into main.heal_spread      select * from other.heal_spread;
 """
 
 if __name__ == "__main__":
