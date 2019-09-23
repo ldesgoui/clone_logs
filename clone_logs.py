@@ -296,10 +296,8 @@ def main(database, imports, ids, **search_opts):
         initialize(database, db)
 
         import_databases(db, imports)
-        db.commit()
 
         fetch_logs(db, itertools.chain(ids, search(**search_opts)))
-        db.commit()
 
     log.info("program exit")
 
@@ -328,6 +326,7 @@ def import_databases(db, imports):
             log.error(f"cannot import, invalid schema in {path!r}")
         finally:
             cursor.execute("detach database other")
+            db.commit()
 
 
 def search(limit, skip, players, uploader, title, map):
@@ -374,7 +373,7 @@ def search(limit, skip, players, uploader, title, map):
 
 def fetch_logs(db, logs):
     cursor = db.cursor()
-    for log_id in logs:
+    for n, log_id in enumerate(logs):
         cursor.execute("select id from log where id = ?", (log_id,))
         if cursor.fetchone() is not None:
             log.info(f"ignoring known log {log_id}")
@@ -384,6 +383,9 @@ def fetch_logs(db, logs):
 
         with urllib.request.urlopen(f"https://logs.tf/api/v1/log/{log_id}") as resp:
             insert(cursor, log_id, json.load(resp))
+
+        if n % 10 == 0:
+            db.commit()
 
         time.sleep(0.5)
 
