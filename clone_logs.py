@@ -1,5 +1,272 @@
 #!/usr/bin/env python3
 
+
+SCHEMA = r"""
+create table log
+    ( id                        integer primary key
+    , date                      datetime
+    , title                     text
+    , map                       text
+    , duration                  integer
+    -- INFO
+    , supplemental              bool
+    , has_real_damage           bool
+    , has_weapon_damage         bool
+    , has_accuracy              bool
+    , has_medkit_pickups        bool
+    , has_medkit_health         bool
+    , has_headshot_kills        bool
+    , has_headshot_hits         bool
+    , has_backstabs             bool
+    , has_point_captures        bool
+    , has_sentries_built        bool
+    , has_damage_taken          bool
+    , has_airshots              bool
+    , has_heals_received        bool
+    , has_intel_captures        bool
+    , scoring_attack_defense    bool
+    , uploader_steam_id         unsigned big int
+    , uploader_name             text
+    , uploader_info             text
+    -- TEAMS
+    , red_score                 integer
+    , red_kills                 integer
+    , red_deaths                integer
+    , red_damage                integer
+    , red_first_caps            integer
+    , red_caps                  integer
+    , red_charges               integer
+    , red_drops                 integer
+    , blu_score                 integer
+    , blu_kills                 integer
+    , blu_deaths                integer
+    , blu_damage                integer
+    , blu_first_caps            integer
+    , blu_caps                  integer
+    , blu_charges               integer
+    , blu_drops                 integer
+    );
+
+create table killstreak
+    ( log_id    integer not null references logs(id)
+    , steam_id  unsigned big int
+    , streak    integer
+    , time      integer
+    );
+
+create table chat
+    ( log_id    integer not null references logs(id)
+    , idx       integer not null
+    , steam_id  unsigned big int
+    , name      text
+    , message   text
+    );
+
+create table round
+    ( log_id        integer not null references logs(id)
+    , idx           integer not null
+    , start         datetime
+    , duration      integer
+    , first_cap     text
+    , winner        text
+    , red_score     integer
+    , red_kills     integer
+    , red_damage    integer
+    , red_charges   integer
+    , blu_score     integer
+    , blu_kills     integer
+    , blu_damage    integer
+    , blu_charges   integer
+    );
+
+create table round_event
+    ( log_id            integer not null references logs(id)
+    , round_idx         integer not null
+    , time              integer
+    , type              text
+    , team              text
+    , point             integer
+    , medigun           text
+    , steam_id          unsigned big int
+    , killer_steam_id   unsigned big int
+    );
+
+create table round_player
+    ( log_id    integer not null references logs(id)
+    , round_idx integer not null
+    , steam_id  unsigned big int
+    , kills     integer
+    , damage    integer
+    );
+
+create table player
+    ( log_id                        integer not null references logs(id)
+    , steam_id                      unsigned big int
+    , name                          text
+    , team                          text
+    , kills                         integer
+    , assists                       integer
+    , deaths                        integer
+    , suicides                      integer
+    , damage                        integer
+    , damage_real                   integer
+    , damage_taken                  integer
+    , damage_taken_real             integer
+    , heals_received                integer
+    , longest_killstreak            integer
+    , airshots                      integer
+    , medkit_pickup                 integer
+    , medkit_health                 integer
+    , backstabs                     integer
+    , headshot_kills                integer
+    , headshots                     integer
+    , sentries                      integer
+    , point_captures                integer
+    , intel_captures                integer
+
+    -- MEDIC
+    , charges                       integer
+    , charges_uber                  integer
+    , charges_kritzkrieg            integer
+    , charges_vaccinator            integer
+    , charges_quickfix              integer
+    , drops                         integer
+    , advantages_lost               integer
+    , biggest_advantage_lost        integer
+    , deaths_with_95_uber           integer
+    , deaths_within_20s_after_uber  integer
+    , average_time_before_healing   float
+    , average_time_to_build         float
+    , average_time_before_using     float
+    , average_charge_length         float
+
+    -- CLASS STATS
+    , time_as_scout                 integer
+    , kills_as_scout                integer
+    , assists_as_scout              integer
+    , deaths_as_scout               integer
+    , damage_as_scout               integer
+
+    , time_as_soldier               integer
+    , kills_as_soldier              integer
+    , assists_as_soldier            integer
+    , deaths_as_soldier             integer
+    , damage_as_soldier             integer
+
+    , time_as_pyro                  integer
+    , kills_as_pyro                 integer
+    , assists_as_pyro               integer
+    , deaths_as_pyro                integer
+    , damage_as_pyro                integer
+
+    , time_as_demoman               integer
+    , kills_as_demoman              integer
+    , assists_as_demoman            integer
+    , deaths_as_demoman             integer
+    , damage_as_demoman             integer
+
+    , time_as_heavy                 integer
+    , kills_as_heavy                integer
+    , assists_as_heavy              integer
+    , deaths_as_heavy               integer
+    , damage_as_heavy               integer
+
+    , time_as_engineer              integer
+    , kills_as_engineer             integer
+    , assists_as_engineer           integer
+    , deaths_as_engineer            integer
+    , damage_as_engineer            integer
+
+    , time_as_medic                 integer
+    , kills_as_medic                integer
+    , assists_as_medic              integer
+    , deaths_as_medic               integer
+    , damage_as_medic               integer
+
+    , time_as_sniper                integer
+    , kills_as_sniper               integer
+    , assists_as_sniper             integer
+    , deaths_as_sniper              integer
+    , damage_as_sniper              integer
+
+    , time_as_spy                   integer
+    , kills_as_spy                  integer
+    , assists_as_spy                integer
+    , deaths_as_spy                 integer
+    , damage_as_spy                 integer
+
+
+    -- TARGET STATS
+    , scout_kills                   integer
+    , scout_assists                 integer
+    , scout_deaths                  integer
+
+    , soldier_kills                 integer
+    , soldier_assists               integer
+    , soldier_deaths                integer
+
+    , pyro_kills                    integer
+    , pyro_assists                  integer
+    , pyro_deaths                   integer
+
+    , demoman_kills                 integer
+    , demoman_assists               integer
+    , demoman_deaths                integer
+
+    , heavy_kills                   integer
+    , heavy_assists                 integer
+    , heavy_deaths                  integer
+
+    , engineer_kills                integer
+    , engineer_assists              integer
+    , engineer_deaths               integer
+
+    , medic_kills                   integer
+    , medic_assists                 integer
+    , medic_deaths                  integer
+
+    , sniper_kills                  integer
+    , sniper_assists                integer
+    , sniper_deaths                 integer
+
+    , spy_kills                     integer
+    , spy_assists                   integer
+    , spy_deaths                    integer
+    );
+
+create table player_weapon
+    ( log_id            integer not null references logs(id)
+    , steam_id          unsigned big int
+    , class             text
+    , weapon            text
+    , kills             integer
+    , damage            integer
+    , average_damage    float
+    , shots             integer
+    , hits              integer
+    );
+
+create table heal_spread
+    ( log_id            integer not null references logs(id)
+    , healer_steam_id   unsigned big int
+    , target_steam_id   unsigned big int
+    , heal_amount       integer
+    );
+"""
+
+IMPORT = """
+insert or ignore into main.log              select * from other.log;
+insert or ignore into main.killstreak       select * from other.killstreak;
+insert or ignore into main.chat             select * from other.chat;
+insert or ignore into main.round            select * from other.round;
+insert or ignore into main.round_event      select * from other.round_event;
+insert or ignore into main.round_player     select * from other.round_player;
+insert or ignore into main.player           select * from other.player;
+insert or ignore into main.player_weapon    select * from other.player_weapon;
+insert or ignore into main.heal_spread      select * from other.heal_spread;
+"""
+
+
 from datetime import datetime, timedelta
 import argparse
 import contextlib
@@ -427,271 +694,6 @@ def search(limit, skip, players, uploader, title, map):
 
     return []
 
-
-SCHEMA = r"""
-create table log
-    ( id                        integer primary key
-    , date                      datetime
-    , title                     text
-    , map                       text
-    , duration                  integer
-    -- INFO
-    , supplemental              bool
-    , has_real_damage           bool
-    , has_weapon_damage         bool
-    , has_accuracy              bool
-    , has_medkit_pickups        bool
-    , has_medkit_health         bool
-    , has_headshot_kills        bool
-    , has_headshot_hits         bool
-    , has_backstabs             bool
-    , has_point_captures        bool
-    , has_sentries_built        bool
-    , has_damage_taken          bool
-    , has_airshots              bool
-    , has_heals_received        bool
-    , has_intel_captures        bool
-    , scoring_attack_defense    bool
-    , uploader_steam_id         unsigned big int
-    , uploader_name             text
-    , uploader_info             text
-    -- TEAMS
-    , red_score                 integer
-    , red_kills                 integer
-    , red_deaths                integer
-    , red_damage                integer
-    , red_first_caps            integer
-    , red_caps                  integer
-    , red_charges               integer
-    , red_drops                 integer
-    , blu_score                 integer
-    , blu_kills                 integer
-    , blu_deaths                integer
-    , blu_damage                integer
-    , blu_first_caps            integer
-    , blu_caps                  integer
-    , blu_charges               integer
-    , blu_drops                 integer
-    );
-
-create table killstreak
-    ( log_id    integer not null references logs(id)
-    , steam_id  unsigned big int
-    , streak    integer
-    , time      integer
-    );
-
-create table chat
-    ( log_id    integer not null references logs(id)
-    , idx       integer not null
-    , steam_id  unsigned big int
-    , name      text
-    , message   text
-    );
-
-create table round
-    ( log_id        integer not null references logs(id)
-    , idx           integer not null
-    , start         datetime
-    , duration      integer
-    , first_cap     text
-    , winner        text
-    , red_score     integer
-    , red_kills     integer
-    , red_damage    integer
-    , red_charges   integer
-    , blu_score     integer
-    , blu_kills     integer
-    , blu_damage    integer
-    , blu_charges   integer
-    );
-
-create table round_event
-    ( log_id            integer not null references logs(id)
-    , round_idx         integer not null
-    , time              integer
-    , type              text
-    , team              text
-    , point             integer
-    , medigun           text
-    , steam_id          unsigned big int
-    , killer_steam_id   unsigned big int
-    );
-
-create table round_player
-    ( log_id    integer not null references logs(id)
-    , round_idx integer not null
-    , steam_id  unsigned big int
-    , kills     integer
-    , damage    integer
-    );
-
-create table player
-    ( log_id                        integer not null references logs(id)
-    , steam_id                      unsigned big int
-    , name                          text
-    , team                          text
-    , kills                         integer
-    , assists                       integer
-    , deaths                        integer
-    , suicides                      integer
-    , damage                        integer
-    , damage_real                   integer
-    , damage_taken                  integer
-    , damage_taken_real             integer
-    , heals_received                integer
-    , longest_killstreak            integer
-    , airshots                      integer
-    , medkit_pickup                 integer
-    , medkit_health                 integer
-    , backstabs                     integer
-    , headshot_kills                integer
-    , headshots                     integer
-    , sentries                      integer
-    , point_captures                integer
-    , intel_captures                integer
-
-    -- MEDIC
-    , charges                       integer
-    , charges_uber                  integer
-    , charges_kritzkrieg            integer
-    , charges_vaccinator            integer
-    , charges_quickfix              integer
-    , drops                         integer
-    , advantages_lost               integer
-    , biggest_advantage_lost        integer
-    , deaths_with_95_uber           integer
-    , deaths_within_20s_after_uber  integer
-    , average_time_before_healing   float
-    , average_time_to_build         float
-    , average_time_before_using     float
-    , average_charge_length         float
-
-    -- CLASS STATS
-    , time_as_scout                 integer
-    , kills_as_scout                integer
-    , assists_as_scout              integer
-    , deaths_as_scout               integer
-    , damage_as_scout               integer
-
-    , time_as_soldier               integer
-    , kills_as_soldier              integer
-    , assists_as_soldier            integer
-    , deaths_as_soldier             integer
-    , damage_as_soldier             integer
-
-    , time_as_pyro                  integer
-    , kills_as_pyro                 integer
-    , assists_as_pyro               integer
-    , deaths_as_pyro                integer
-    , damage_as_pyro                integer
-
-    , time_as_demoman               integer
-    , kills_as_demoman              integer
-    , assists_as_demoman            integer
-    , deaths_as_demoman             integer
-    , damage_as_demoman             integer
-
-    , time_as_heavy                 integer
-    , kills_as_heavy                integer
-    , assists_as_heavy              integer
-    , deaths_as_heavy               integer
-    , damage_as_heavy               integer
-
-    , time_as_engineer              integer
-    , kills_as_engineer             integer
-    , assists_as_engineer           integer
-    , deaths_as_engineer            integer
-    , damage_as_engineer            integer
-
-    , time_as_medic                 integer
-    , kills_as_medic                integer
-    , assists_as_medic              integer
-    , deaths_as_medic               integer
-    , damage_as_medic               integer
-
-    , time_as_sniper                integer
-    , kills_as_sniper               integer
-    , assists_as_sniper             integer
-    , deaths_as_sniper              integer
-    , damage_as_sniper              integer
-
-    , time_as_spy                   integer
-    , kills_as_spy                  integer
-    , assists_as_spy                integer
-    , deaths_as_spy                 integer
-    , damage_as_spy                 integer
-
-
-    -- TARGET STATS
-    , scout_kills                   integer
-    , scout_assists                 integer
-    , scout_deaths                  integer
-
-    , soldier_kills                 integer
-    , soldier_assists               integer
-    , soldier_deaths                integer
-
-    , pyro_kills                    integer
-    , pyro_assists                  integer
-    , pyro_deaths                   integer
-
-    , demoman_kills                 integer
-    , demoman_assists               integer
-    , demoman_deaths                integer
-
-    , heavy_kills                   integer
-    , heavy_assists                 integer
-    , heavy_deaths                  integer
-
-    , engineer_kills                integer
-    , engineer_assists              integer
-    , engineer_deaths               integer
-
-    , medic_kills                   integer
-    , medic_assists                 integer
-    , medic_deaths                  integer
-
-    , sniper_kills                  integer
-    , sniper_assists                integer
-    , sniper_deaths                 integer
-
-    , spy_kills                     integer
-    , spy_assists                   integer
-    , spy_deaths                    integer
-    );
-
-create table player_weapon
-    ( log_id            integer not null references logs(id)
-    , steam_id          unsigned big int
-    , class             text
-    , weapon            text
-    , kills             integer
-    , damage            integer
-    , average_damage    float
-    , shots             integer
-    , hits              integer
-    );
-
-create table heal_spread
-    ( log_id            integer not null references logs(id)
-    , healer_steam_id   unsigned big int
-    , target_steam_id   unsigned big int
-    , heal_amount       integer
-    );
-"""
-
-IMPORT = """
-insert or ignore into main.log              select * from other.log;
-insert or ignore into main.killstreak       select * from other.killstreak;
-insert or ignore into main.chat             select * from other.chat;
-insert or ignore into main.round            select * from other.round;
-insert or ignore into main.round_event      select * from other.round_event;
-insert or ignore into main.round_player     select * from other.round_player;
-insert or ignore into main.player           select * from other.player;
-insert or ignore into main.player_weapon    select * from other.player_weapon;
-insert or ignore into main.heal_spread      select * from other.heal_spread;
-"""
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
