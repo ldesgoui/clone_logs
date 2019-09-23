@@ -430,48 +430,48 @@ def search(limit, skip, players, uploader, title, map):
 
 SCHEMA = r"""
 create table log
-    ( id                    integer primary key
-    , date                  datetime
-    , title                 text
-    , map                   text
-    , duration              integer
+    ( id                        integer primary key
+    , date                      datetime
+    , title                     text
+    , map                       text
+    , duration                  integer
     -- INFO
-    , supplemental          bool
-    , has_real_damage       bool
-    , has_weapon_damage     bool
-    , has_accuracy          bool
-    , has_HP                bool
-    , has_HP_real           bool
-    , has_headshot_kills    bool
-    , has_headshot_hits     bool
-    , has_backstabs         bool
-    , has_point_captures    bool
-    , has_sentries_built    bool
-    , has_damage_taken      bool
-    , has_airshots          bool
-    , has_heals_received    bool
-    , has_intel_captures    bool
-    , ad_scoring            bool
-    , uploader_steam_id     unsigned big int
-    , uploader_name         text
-    , uploader_info         text
+    , supplemental              bool
+    , has_real_damage           bool
+    , has_weapon_damage         bool
+    , has_accuracy              bool
+    , has_medkit_pickups        bool
+    , has_medkit_health         bool
+    , has_headshot_kills        bool
+    , has_headshot_hits         bool
+    , has_backstabs             bool
+    , has_point_captures        bool
+    , has_sentries_built        bool
+    , has_damage_taken          bool
+    , has_airshots              bool
+    , has_heals_received        bool
+    , has_intel_captures        bool
+    , scoring_attack_defense    bool
+    , uploader_steam_id         unsigned big int
+    , uploader_name             text
+    , uploader_info             text
     -- TEAMS
-    , red_score             integer
-    , red_kills             integer
-    , red_deaths            integer
-    , red_damage            integer
-    , red_first_caps        integer
-    , red_caps              integer
-    , red_charges           integer
-    , red_drops             integer
-    , blu_score             integer
-    , blu_kills             integer
-    , blu_deaths            integer
-    , blu_damage            integer
-    , blu_first_caps        integer
-    , blu_caps              integer
-    , blu_charges           integer
-    , blu_drops             integer
+    , red_score                 integer
+    , red_kills                 integer
+    , red_deaths                integer
+    , red_damage                integer
+    , red_first_caps            integer
+    , red_caps                  integer
+    , red_charges               integer
+    , red_drops                 integer
+    , blu_score                 integer
+    , blu_kills                 integer
+    , blu_deaths                integer
+    , blu_damage                integer
+    , blu_first_caps            integer
+    , blu_caps                  integer
+    , blu_charges               integer
+    , blu_drops                 integer
     );
 
 create table killstreak
