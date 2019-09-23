@@ -178,7 +178,7 @@ def insert(cursor, log_id, data):
                 idx,
                 e("time"),
                 e("type"),
-                e("team").lower(),
+                e("team"),
                 e("point"),
                 e("medigun"),
                 as_steamid64(e("steamid")),
@@ -211,7 +211,7 @@ def insert(cursor, log_id, data):
                 log_id,
                 as_steamid64(id),
                 d(f"names.{id}"),
-                p("team").lower(),
+                p("team"),
                 p("kills"),
                 p("assists"),
                 p("deaths"),
@@ -358,18 +358,16 @@ def insert(cursor, log_id, data):
 
 
 def as_steamid64(txt):
-    if txt is None:
-        return None
-
     ident = 76561197960265728
 
-    if "U" in txt:
-        return ident + int(txt.replace("[", "").replace("]", "").split(":")[2])
+    try:
+        if "U" in txt:
+            return ident + int(txt.replace("[", "").replace("]", "").split(":")[2])
 
-    if "STEAM_" in txt:
-        return ident + int(txt.split(":")[2]) * 2 + int(txt.split(":")[1])
-
-    return None
+        if "STEAM_" in txt:
+            return ident + int(txt.split(":")[2]) * 2 + int(txt.split(":")[1])
+    except:
+        return None
 
 
 def dict_path(root):
@@ -378,6 +376,8 @@ def dict_path(root):
         try:
             for key in path.split("."):
                 val = val[key]
+            if val == 811111111111111100000:
+                return 0
             return val
         except:
             pass
