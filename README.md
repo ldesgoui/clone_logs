@@ -4,6 +4,8 @@
 
 **It is greatly recommended to seek existing cloned databases instead of fetching a large amount off the logs.tf API.**
 
+Some should be available here: https://mega.nz/#F!l9oGiKCb!lTWT2RSkTYv-TJZb92_ksA
+
 
 ## Installation:
 
