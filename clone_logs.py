@@ -381,8 +381,11 @@ def fetch_logs(db, logs):
 
         log.info(f"fetching {log_id}")
 
-        with urllib.request.urlopen(f"https://logs.tf/api/v1/log/{log_id}") as resp:
-            insert(cursor, log_id, json.load(resp))
+        try:
+            with urllib.request.urlopen(f"https://logs.tf/api/v1/log/{log_id}") as resp:
+                insert(cursor, log_id, json.load(resp))
+        except urllib.error.HTTPError as e:
+            log.error(f"{log_id}: {e}")
 
         if n % 10 == 0:
             db.commit()
