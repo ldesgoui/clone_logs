@@ -286,7 +286,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def main(database, imports, ids, **search_opts):
+def main(database, imports, ids, id_range, **search_opts):
     log.info("program entry")
 
     if not pathlib.Path(database).exists():
@@ -297,7 +297,7 @@ def main(database, imports, ids, **search_opts):
 
         import_databases(db, imports)
 
-        fetch_logs(db, itertools.chain(ids, search(**search_opts)))
+        fetch_logs(db, itertools.chain(ids, range(*id_range), search(**search_opts)))
 
     log.info("program exit")
 
@@ -731,6 +731,17 @@ if __name__ == "__main__":
         help="directly download ID (can be repeated)",
         metavar="ID",
         dest="ids",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--range",
+        nargs=2,
+        default=[0, 0],
+        type=int,
+        help="directly download a range of IDs, STOP not included",
+        metavar=("START", "STOP"),
+        dest="id_range",
     )
 
     parser.add_argument(
