@@ -269,6 +269,7 @@ insert or ignore into main.heal_spread      select * from other.heal_spread;
 from datetime import datetime, timedelta
 import argparse
 import contextlib
+import http.client
 import itertools
 import json
 import logging
@@ -290,7 +291,7 @@ def main(database, imports, ids, id_range, **search_opts):
     log.info("program entry")
 
     if not pathlib.Path(database).exists():
-        log.warning(f"no database at path {database!r}, creating")
+        log.warning(f"{database!r}: no existing database, creating")
 
     with contextlib.closing(sqlite3.connect(database)) as db:
         initialize(database, db)
@@ -304,26 +305,26 @@ def main(database, imports, ids, id_range, **search_opts):
 
 def initialize(database, db):
     try:
-        db.execute("select * from main.log where 0")
-    except sqlite3.OperationalError:
-        log.warning(f"missing schema in {database!r}, initializing")
         db.executescript(SCHEMA)
+        log.info(f"{database!r}: initialized schema")
+    except sqlite3.OperationalError:
+        pass
 
 
 def import_databases(db, imports):
     for path in imports:
         if not pathlib.Path(path).exists():
-            log.error(f"cannot import, no database at path {path!r}")
+            log.error(f"{path!r}: no such file")
             continue
 
-        log.info(f"importing {path!r}")
+        log.info(f"{path!r}: importing")
 
         cursor = db.execute("attach database ? as other", (path,))
 
         try:
             cursor.executescript(IMPORT)
         except sqlite3.OperationalError:
-            log.error(f"cannot import, invalid schema in {path!r}")
+            log.error(f"{path!r}: invalid schema")
         finally:
             cursor.execute("detach database other")
             db.commit()
@@ -360,7 +361,7 @@ def search(limit, skip, players, uploader, title, map):
             for item in data["logs"]:
                 then = datetime.utcfromtimestamp(item["date"])
                 if age_check < then:
-                    log.info(f"skipping log {item['id']} because it is too young")
+                    log.info(f"{item['id']}: skipping because it is too young")
                     continue
 
                 yield item["id"]
@@ -376,21 +377,25 @@ def fetch_logs(db, logs):
     for n, log_id in enumerate(logs):
         cursor.execute("select id from log where id = ?", (log_id,))
         if cursor.fetchone() is not None:
-            log.info(f"ignoring known log {log_id}")
+            log.info(f"{log_id}: ignoring known")
             continue
 
-        log.info(f"fetching {log_id}")
+        log.info(f"{log_id}: fetching")
 
-        try:
-            with urllib.request.urlopen(f"https://logs.tf/api/v1/log/{log_id}") as resp:
-                insert(cursor, log_id, json.load(resp))
-        except urllib.error.HTTPError as e:
-            log.error(f"{log_id}: {e}")
+        while True:
+            try:
+                time.sleep(0.5)
+                with urllib.request.urlopen(f"https://logs.tf/api/v1/log/{log_id}") as resp:
+                    insert(cursor, log_id, json.load(resp))
+            except urllib.error.HTTPError as e:
+                log.error(f"{log_id}: {e}")
+            except http.client.IncompleteRead as e:
+                log.error(f"{log_id}: {e}, retrying")
+                continue
+            break
 
         if n % 10 == 0:
             db.commit()
-
-        time.sleep(0.5)
 
 
 def insert(cursor, log_id, data):
