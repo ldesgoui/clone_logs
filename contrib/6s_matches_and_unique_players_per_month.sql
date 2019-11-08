@@ -5,7 +5,6 @@ select
 from log
 inner join player on log.id = player.log_id
 where title not like 'TF2Center Lobby #%'
-  and date between '2018-11-01' and '2019-11-01'
 group by id
 having sum(player.team = "Red") = 6
     or sum(player.team = "Blue") = 6;
